@@ -5,7 +5,6 @@
     /// </summary>
     public class StationDao
     {
-        // Primary key
         public int StationId { get; set; }
 
         // e.g. "Tiefenbrunnen" / "Mythenquai"

@@ -53,20 +53,24 @@
                     // Skip timestamp_cet
                     if (measurementType.Equals("timestamp_cet", StringComparison.OrdinalIgnoreCase))
                         continue;
-
-                    var jsonValue = measurementValue.Value;
-                    // Check if the JSON element is null
-                    if (jsonValue.ValueKind == JsonValueKind.Null)
+                    try
                     {
-                        _logger.LogDebug("Measurement of type {MeasurementType} for station {Station} is null.",
-                            measurementType, record.Station);
-                        continue;
-                    }
+                        var jsonValue = measurementValue.Value;
 
-                    // Try to get a numeric value
-                    if (!jsonValue.TryGetDouble(out double numericValue))
-                    {
-                        if (jsonValue.ValueKind == JsonValueKind.String)
+                        if (jsonValue.ValueKind == JsonValueKind.Null)
+                        {
+                            _logger.LogDebug("Measurement of type {MeasurementType} for station {Station} is null.",
+                                measurementType, record.Station);
+                            continue;
+                        }
+
+                        double numericValue;
+
+                        if (jsonValue.ValueKind == JsonValueKind.Number)
+                        {
+                            numericValue = jsonValue.GetDouble();
+                        }
+                        else if (jsonValue.ValueKind == JsonValueKind.String)
                         {
                             var strValue = jsonValue.GetString();
                             if (!double.TryParse(strValue, out numericValue))
@@ -78,27 +82,31 @@
                         }
                         else
                         {
-                            _logger.LogWarning("Measurement of type {MeasurementType} for station {Station} did not yield a valid numeric value.",
-                                measurementType, record.Station);
+                            _logger.LogWarning("Measurement of type {MeasurementType} for station {Station} has unexpected JSON type: {Type}.",
+                                measurementType, record.Station, jsonValue.ValueKind);
                             continue;
                         }
+
+                        var dto = new ImportedMeasurementDto
+                        {
+                            StationName = record.Station,
+                            TypeName = measurementType,
+                            Unit = measurementValue.Unit ?? "N/A",
+                            Value = numericValue,
+                            Status = measurementValue.Status ?? string.Empty,
+                            TimestampUtc = record.Timestamp
+                        };
+
+                        _logger.LogDebug("Adding measurement: Station {Station}, Type {Type}, Value {Value}",
+                            dto.StationName, dto.TypeName, dto.Value);
+
+                        await _repository.AddMeasurementAsync(dto).ConfigureAwait(false);
                     }
-
-                    // Create a DTO for valid measurement
-                    var dto = new ImportedMeasurementDto
+                    catch (Exception ex)
                     {
-                        StationName = record.Station,
-                        TypeName = measurementType,
-                        Unit = measurementValue.Unit ?? "N/A",
-                        Value = numericValue,
-                        Status = measurementValue.Status ?? string.Empty,
-                        TimestampUtc = record.Timestamp // Use only top-level timestamp
-                    };
-
-                    _logger.LogDebug("Adding measurement: Station {Station}, Type {Type}, Value {Value}",
-                        dto.StationName, dto.TypeName, dto.Value);
-
-                    await _repository.AddMeasurementAsync(dto).ConfigureAwait(false);
+                        _logger.LogError(ex, "Error processing measurement of type {MeasurementType} for station {Station}.",
+                            measurementType, record.Station);
+                    }
                 }
             }
 

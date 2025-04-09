@@ -5,61 +5,81 @@ using Serilog;
 using Microsoft.OpenApi.Models;
 using WeatherMeasurementService.Swagger;
 
-
-var builder = WebApplication.CreateBuilder(args);
-
-// Use Serilog for logging
-Log.Logger = new LoggerConfiguration()
-    .ReadFrom.Configuration(builder.Configuration)
-    .CreateLogger();
-builder.Host.UseSerilog();
-
-// Register controllers, OpenAPI, and other services.
-builder.Services.AddControllers();
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen(c =>
+namespace WeatherMeasurementService
 {
-    c.SwaggerDoc("v1", new OpenApiInfo { Title = "WeatherMeasurementService", Version = "v1" });
-    c.EnableAnnotations();
-    c.UseInlineDefinitionsForEnums();
-    c.SchemaFilter<MeasurementTypeSchemaFilter>();// MeasurementType Dropdown
-    c.SchemaFilter<StationSchemaFilter>(); // Station Dropdown
-});
+    public partial class Program
+    {
+        public static async Task Main(string[] args)
+        {
+            var builder = WebApplication.CreateBuilder(args);
 
-// Register DbContext with SQLite
-builder.Services.AddDbContext<WeatherDbContext>(options =>
-    options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
+            // Use Serilog for logging
+            Log.Logger = new LoggerConfiguration()
+                .ReadFrom.Configuration(builder.Configuration)
+                .CreateLogger();
+            builder.Host.UseSerilog();
 
-// Register WeatherData services.
-builder.Services.AddScoped<IWeatherDataService, WeatherDataService>();
-builder.Services.AddScoped<IWeatherDataRepository, WeatherDataRepository>();
-builder.Services.AddScoped<WeatherDataProcessingService>();
+            // Register controllers, OpenAPI, and other services.
+            builder.Services.AddControllers();
+            builder.Services.AddEndpointsApiExplorer();
+            builder.Services.AddSwaggerGen(c =>
+            {
+                c.SwaggerDoc("v1", new OpenApiInfo { Title = "WeatherMeasurementService", Version = "v1" });
+                c.EnableAnnotations();
+                c.UseInlineDefinitionsForEnums();
+                c.SchemaFilter<MeasurementTypeSchemaFilter>();// MeasurementType Dropdown
+                c.SchemaFilter<StationSchemaFilter>(); // Station Dropdown
+            });
 
-// Register ExternalWeatherApiService as a typed HttpClient.
-builder.Services.AddHttpClient<ExternalWeatherApiClient>(client =>
-{
-    var baseUrl = builder.Configuration["ExternalApi:BaseUrl"];
-    client.BaseAddress = new Uri(baseUrl!);
-});
+            // Register DbContext with SQLite
+            if (builder.Environment.EnvironmentName == "IntegrationTest")
+            {
+                builder.Services.AddDbContext<WeatherDbContext>(options =>
+                    options.UseInMemoryDatabase($"IntegrationTestDb_{Guid.NewGuid()}"));
+            }
+            else
+            {
+                builder.Services.AddDbContext<WeatherDbContext>(options =>
+                    options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
+            }
 
-// Register the hosted service to fetch weather data on startup.
-builder.Services.AddHostedService<WeatherDataFetcherHostedService>();
+            // Register WeatherData services.
+            builder.Services.AddScoped<IWeatherDataService, WeatherDataService>();
+            builder.Services.AddScoped<IWeatherDataRepository, WeatherDataRepository>();
+            builder.Services.AddScoped<WeatherDataProcessingService>();
 
-var app = builder.Build();
+            // Register ExternalWeatherApiService as a typed HttpClient.
+            builder.Services.AddHttpClient<ExternalWeatherApiClient>(client =>
+            {
+                var baseUrl = builder.Configuration["ExternalApi:BaseUrl"];
+                client.BaseAddress = new Uri(baseUrl!);
+            });
 
-using var scope = app.Services.CreateScope();
-var context = scope.ServiceProvider.GetRequiredService<WeatherDbContext>();
-await context.Database.EnsureCreatedAsync();  // Creates the database and schema if not exists
+            // Register the hosted service to fetch weather data on startup.
+            builder.Services.AddHostedService<WeatherDataFetcherHostedService>();
 
-app.UseHttpsRedirection();
+            var app = builder.Build();
 
-app.UseAuthorization();
-app.UseSwagger();
-app.UseSwaggerUI(c =>
-{
-    c.SwaggerEndpoint("/swagger/v1/swagger.json", "WeatherMeasurementService v1");
-});
+            using var scope = app.Services.CreateScope();
+            var context = scope.ServiceProvider.GetRequiredService<WeatherDbContext>();
+            await context.Database.EnsureCreatedAsync();  // Creates the database and schema if not exists
 
-app.MapControllers();
+            app.UseHttpsRedirection();
 
-await app.RunAsync();
+            app.UseAuthorization();
+            app.UseSwagger();
+            app.UseSwaggerUI(c =>
+            {
+                c.SwaggerEndpoint("/swagger/v1/swagger.json", "WeatherMeasurementService v1");
+            });
+
+            app.MapControllers();
+
+            await app.RunAsync();
+
+        }
+
+        // This protected constructor enables the WebApplicationFactory to create a copy of Program. (Test.InitDbHelper)
+        protected Program() { }
+    }
+}

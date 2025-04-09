@@ -7,7 +7,6 @@
     {
         public int WeatherDataId { get; set; }
 
-        // Foreign keys
         public int StationId { get; set; }
         public required StationDao Station { get; set; }
 
