@@ -1,4 +1,4 @@
-﻿namespace WeatherMeasurementService.Dtos
+﻿namespace WeatherMeasurementService.Models.Dtos
 {
     /// <summary>
     /// This DTO is for providing measurement data to the client

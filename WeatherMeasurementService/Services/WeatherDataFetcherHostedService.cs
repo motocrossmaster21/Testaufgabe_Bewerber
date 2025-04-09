@@ -1,11 +1,4 @@
-﻿using System;
-using System.Threading;
-using System.Threading.Tasks;
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
-using WeatherMeasurementService.Services;
-
-namespace WeatherMeasurementService.Services
+﻿namespace WeatherMeasurementService.Services
 {
     /// <summary>
     /// This hosted service fetches weather data from the external API on application startup.
@@ -21,13 +14,12 @@ namespace WeatherMeasurementService.Services
 
             // Create a new scope to retrieve scoped services.
             using var scope = _services.CreateScope();
-            var externalService = scope.ServiceProvider.GetRequiredService<ExternalWeatherApiService>();
+            var externalService = scope.ServiceProvider.GetRequiredService<ExternalWeatherApiClient>();
             var processingService = scope.ServiceProvider.GetRequiredService<WeatherDataProcessingService>();
 
             // Determine the previous day's date range in UTC.
-            var yesterday = DateTime.UtcNow.Date.AddDays(-1);
-            var startDate = yesterday;
-            var endDate = yesterday.AddDays(1);
+            var yesterday = DateTime.UtcNow.Date.AddDays(-2); // The start date after which the measurements should be returned.
+            var today = DateTime.UtcNow.Date.AddDays(1); // The end date before which the measurements should be returned.
 
             // Define the target stations.
             var stations = new[] { "tiefenbrunnen", "mythenquai" };
@@ -36,11 +28,11 @@ namespace WeatherMeasurementService.Services
                 // Fetch data from external API with specified parameters:
                 var apiResponse = await externalService.FetchWeatherDataAsync(
                     station,
-                    startDate, // - Start and End Date (previous day)
-                    endDate, // - Start and End Date (previous day)
-                    "timestamp_cet desc",  // - Sort: "timestamp_cet desc" to get newest first
-                    10, // - Limit: max 100 entries
-                    0) // - Offset: 0 (start at the beginning)
+                    yesterday, // start date 
+                    today, // End date 
+                    "timestamp_cet desc",  // Sort: "timestamp_cet desc" to get newest first
+                    100, // Limit: max 100 entries (for each station)
+                    0) // Offset: 0 (start at the beginning)
                     .ConfigureAwait(false);
 
                 if (apiResponse != null)

@@ -1,7 +1,7 @@
 ﻿using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace WeatherMeasurementService.ExternalApiModels
+namespace WeatherMeasurementService.Models.ExternalApiModels
 {
     /// <summary>
     /// Represents an individual measurement value (e.g. "air_temperature", "water_temperature").

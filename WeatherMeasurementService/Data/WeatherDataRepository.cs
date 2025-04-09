@@ -1,7 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
-using WeatherMeasurementService.Dtos;
-using WeatherMeasurementService.Models;
+using WeatherMeasurementService.Models.Daos;
+using WeatherMeasurementService.Models.Dtos;
 
 namespace WeatherMeasurementService.Data
 {
@@ -11,10 +10,10 @@ namespace WeatherMeasurementService.Data
         private readonly WeatherDbContext _context = context;
 
         // Simple in-memory caches for the duration of the request
-        private readonly Dictionary<string, Station> _stationCache = [];
-        private readonly Dictionary<string, MeasurementType> _measurementTypeCache = [];
+        private readonly Dictionary<string, StationDao> _stationCache = [];
+        private readonly Dictionary<string, MeasurementTypeDao> _measurementTypeCache = [];
 
-        public async Task AddMeasurementAsync(CreateMeasurementDto dto)
+        public async Task AddMeasurementAsync(ImportedMeasurementDto dto)
         {
             // Filter out invalid measurements.
             if (!dto.Status.Equals("ok", StringComparison.CurrentCultureIgnoreCase))
@@ -25,21 +24,21 @@ namespace WeatherMeasurementService.Data
             }
 
             // Check the cache for the station.
-            if (!_stationCache.TryGetValue(dto.StationName, out Station? station))
+            if (!_stationCache.TryGetValue(dto.StationName, out StationDao? station))
             {
                 // Search locally (in the change tracker) first, then in the database.
                 station = _context.Stations.Local.FirstOrDefault(s => s.Name == dto.StationName)
                           ?? await _context.Stations.FirstOrDefaultAsync(s => s.Name == dto.StationName).ConfigureAwait(false)
-                          ?? new Station { Name = dto.StationName };
+                          ?? new StationDao { Name = dto.StationName };
                 _stationCache[dto.StationName] = station;
             }
 
             // Check the cache for measurement type.
-            if (!_measurementTypeCache.TryGetValue(dto.TypeName, out MeasurementType? measurementType))
+            if (!_measurementTypeCache.TryGetValue(dto.TypeName, out MeasurementTypeDao? measurementType))
             {
                 measurementType = _context.MeasurementTypes.Local.FirstOrDefault(mt => mt.TypeName == dto.TypeName)
                                    ?? await _context.MeasurementTypes.FirstOrDefaultAsync(mt => mt.TypeName == dto.TypeName).ConfigureAwait(false)
-                                   ?? new MeasurementType { TypeName = dto.TypeName, DefaultUnit = dto.Unit };
+                                   ?? new MeasurementTypeDao { TypeName = dto.TypeName, DefaultUnit = dto.Unit };
                 _measurementTypeCache[dto.TypeName] = measurementType;
             }
 
@@ -56,40 +55,33 @@ namespace WeatherMeasurementService.Data
                 return;
             }
 
-            // Create the new WeatherData entry
-            var measurement = new WeatherData
+            var measurement = new WeatherDataDao
             {
                 Station = station,
                 MeasurementType = measurementType,
                 TimestampUtc = dto.TimestampUtc,
-                Value = (double)dto.Value,
+                Value = dto.Value,
                 Unit = dto.Unit
             };
 
             _context.WeatherData.Add(measurement);
         }
 
-        public async Task<IEnumerable<WeatherDataDto>> GetMeasurementsAsync(string station, DateTime startDate, DateTime endDate, string sort, int limit, int offset)
+        public async Task<IEnumerable<WeatherDataDto>> GetAllMeasurementsAsync(string? station, DateTime start, DateTime end, string measurementType)
         {
-            // Query incl. navigation properties
             var query = _context.WeatherData
                 .Include(m => m.Station)
                 .Include(m => m.MeasurementType)
-                .Where(m => m.Station.Name == station && m.TimestampUtc >= startDate && m.TimestampUtc <= endDate);
+                .Where(m => m.MeasurementType.TypeName == measurementType &&
+                            m.TimestampUtc >= start && m.TimestampUtc <= end);
 
-            // Sort by timestamp
-            if (sort.ToLower().Contains("desc",StringComparison.OrdinalIgnoreCase))
+            if (!string.IsNullOrWhiteSpace(station))
             {
-                query = query.OrderByDescending(m => m.TimestampUtc);
-            }
-            else
-            {
-                query = query.OrderBy(m => m.TimestampUtc);
+                query = query.Where(m => m.Station.Name == station);
             }
 
-            var measurements = await query.Skip(offset).Take(limit).ToListAsync().ConfigureAwait(false);
+            var measurements = await query.ToListAsync().ConfigureAwait(false);
 
-            // Mapping: Entity → DTO
             return measurements.Select(m => new WeatherDataDto
             {
                 StationName = m.Station.Name,
@@ -100,38 +92,35 @@ namespace WeatherMeasurementService.Data
             });
         }
 
-        public async Task<WeatherStatisticDto?> GetStatisticsAsync(string station, string measurementType, DateTime startDate, DateTime endDate)
+        public async Task<IEnumerable<MeasurementTypeDto>> GetAllMeasurementTypesAsync()
         {
-            var query = _context.WeatherData
-                .Include(m => m.Station)
-                .Include(m => m.MeasurementType)
-                .Where(m => m.Station.Name == station &&
-                            m.MeasurementType.TypeName == measurementType &&
-                            m.TimestampUtc >= startDate &&
-                            m.TimestampUtc <= endDate);
-
-            var count = await query.CountAsync().ConfigureAwait(false);
-            if (count == 0)
+            var types = await _context.MeasurementTypes.ToListAsync();
+            return types.Select(t => new MeasurementTypeDto
             {
-                // No data found, returning null.
-                return null;
-            }
+                TypeName = t.TypeName,
+                DefaultUnit = t.DefaultUnit
+            });
+        }
 
-            var min = await query.MinAsync(m => m.Value).ConfigureAwait(false);
-            var max = await query.MaxAsync(m => m.Value).ConfigureAwait(false);
-            var avg = await query.AverageAsync(m => m.Value).ConfigureAwait(false);
-
-            return new WeatherStatisticDto
+        public async Task<IEnumerable<StationDto>> GetAllStationsAsync()
+        {
+            var stations = await _context.Stations.ToListAsync();
+            return stations.Select(s => new StationDto
             {
-                StationName = station,
-                MeasurementType = measurementType,
-                Count = count,
-                MinValue = min,
-                MaxValue = max,
-                AvgValue = avg,
-                RangeStart = startDate,
-                RangeEnd = endDate
-            };
+                Name = s.Name
+            });
+        }
+
+        public async Task<bool> ExistsMeasurementTypeAsync(string measurementType)
+        {
+            return await _context.MeasurementTypes
+                .AnyAsync(mt => mt.TypeName == measurementType);
+        }
+
+        public async Task<bool> ExistsStationAsync(string stationName)
+        {
+            return await _context.Stations
+                .AnyAsync(s => s.Name == stationName);
         }
 
         public async Task<int> SaveChangesAsync()

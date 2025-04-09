@@ -1,9 +1,9 @@
-﻿namespace WeatherMeasurementService.Dtos
+﻿namespace WeatherMeasurementService.Models.Dtos
 {
     /// <summary>
     /// This DTO is for receiving new measurements from an external data source
     /// </summary>
-    public class CreateMeasurementDto
+    public class ImportedMeasurementDto
     {
         // e.g. "Tiefenbrunnen"
         public required string StationName { get; set; }

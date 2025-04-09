@@ -1,9 +1,9 @@
-﻿namespace WeatherMeasurementService.Models
+﻿namespace WeatherMeasurementService.Models.Daos
 {
     /// <summary>
-    /// MeasurementType table: Each type of measurement (air temp, water temp, etc.)
+    /// MeasurementTypeDao table: Each type of measurement (air temp, water temp, etc.)
     /// </summary>
-    public class MeasurementType
+    public class MeasurementTypeDao
     {
         public int MeasurementTypeId { get; set; }
 
@@ -14,6 +14,6 @@
         public required string DefaultUnit { get; set; }
 
         // Navigation property: 1 measurement type can be used in many WeatherData records
-        public ICollection<WeatherData>? Measurements { get; set; }
+        public ICollection<WeatherDataDao>? Measurements { get; set; }
     }
 }

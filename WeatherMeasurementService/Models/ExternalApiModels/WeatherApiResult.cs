@@ -1,6 +1,6 @@
 ﻿using System.Text.Json.Serialization;
 
-namespace WeatherMeasurementService.ExternalApiModels
+namespace WeatherMeasurementService.Models.ExternalApiModels
 {
     /// <summary>
     /// Represents a single record within the "result" array of the external API.

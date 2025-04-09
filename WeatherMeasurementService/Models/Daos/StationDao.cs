@@ -1,9 +1,9 @@
-﻿namespace WeatherMeasurementService.Models
+﻿namespace WeatherMeasurementService.Models.Daos
 {
     /// <summary>
     /// Station table: Master data for each weather station
     /// </summary>
-    public class Station
+    public class StationDao
     {
         // Primary key
         public int StationId { get; set; }
@@ -12,6 +12,6 @@
         public required string Name { get; set; }
 
         // Navigation property: 1 station can have many WeatherData entries
-        public ICollection<WeatherData>? Measurements { get; set; }
+        public ICollection<WeatherDataDao>? Measurements { get; set; }
     }
 }

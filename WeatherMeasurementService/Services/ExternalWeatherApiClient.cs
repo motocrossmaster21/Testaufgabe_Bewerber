@@ -1,16 +1,12 @@
-﻿using System.Net.Http;
-using System.Text.Json;
-using Microsoft.Extensions.Logging;
-using WeatherMeasurementService.Data;
-using WeatherMeasurementService.Dtos;
-using WeatherMeasurementService.ExternalApiModels;
+﻿using System.Text.Json;
+using WeatherMeasurementService.Models.ExternalApiModels;
 
 namespace WeatherMeasurementService.Services
 {
-    public class ExternalWeatherApiService(HttpClient httpClient, ILogger<ExternalWeatherApiService> logger)
+    public class ExternalWeatherApiClient(HttpClient httpClient, ILogger<ExternalWeatherApiClient> logger)
     {
         private readonly HttpClient _httpClient = httpClient;
-        private readonly ILogger<ExternalWeatherApiService> _logger = logger;
+        private readonly ILogger<ExternalWeatherApiClient> _logger = logger;
         private readonly JsonSerializerOptions _jsonSerializerOptions = new()
         {
             WriteIndented = true,
@@ -38,25 +34,19 @@ namespace WeatherMeasurementService.Services
             int limit,
             int offset)
         {
-            // Example: 
-            // https://tecdottir.metaodi.ch/measurements/tiefenbrunnen
-            //   ?startDate=2025-03-07&endDate=2025-03-08
-            //   &sort=timestamp_cet%20desc
-            //   &limit=100
-            //   &offset=2
-
-            // Build the URL according to the documentation
-            string baseUrl = "https://tecdottir.metaodi.ch/measurements";
-            string requestUrl = $"{baseUrl}/{station}" +
-                                $"?startDate={startDate:yyyy-MM-dd}" +
-                                $"&endDate={endDate:yyyy-MM-dd}" +
-                                $"&sort={Uri.EscapeDataString(sort)}" + // Prevents problems with spaces or special characters (e.g. %20)
-                                $"&limit={limit}" +
-                                $"&offset={offset}";
-
             try
             {
-                HttpResponseMessage response = await _httpClient.GetAsync(requestUrl).ConfigureAwait(false);
+                // Build the URL according to the documentation
+                string queryString = $"{station}" +
+                                    $"?startDate={startDate:yyyy-MM-dd}" +
+                                    $"&endDate={endDate:yyyy-MM-dd}" +
+                                    $"&sort={Uri.EscapeDataString(sort)}" + // Prevents problems with spaces or special characters (e.g. %20)
+                                    $"&limit={limit}" +
+                                    $"&offset={offset}";
+
+                var url = $"measurements/{queryString}";
+
+                HttpResponseMessage response = await _httpClient.GetAsync(url).ConfigureAwait(false);
                 if (!response.IsSuccessStatusCode)
                 {
                     _logger.LogError("Failed to fetch data. Status code: {Code}", response.StatusCode);

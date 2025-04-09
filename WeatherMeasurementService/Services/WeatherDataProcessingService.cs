@@ -3,10 +3,10 @@
     using System;
     using System.Threading.Tasks;
     using WeatherMeasurementService.Data;
-    using WeatherMeasurementService.Dtos;
-    using WeatherMeasurementService.ExternalApiModels;
     using Microsoft.Extensions.Logging;
     using System.Text.Json;
+    using WeatherMeasurementService.Models.ExternalApiModels;
+    using WeatherMeasurementService.Models.Dtos;
 
 
     /// <summary>
@@ -58,7 +58,7 @@
                     // Check if the JSON element is null
                     if (jsonValue.ValueKind == JsonValueKind.Null)
                     {
-                        _logger.LogWarning("Measurement of type {MeasurementType} for station {Station} is null.",
+                        _logger.LogDebug("Measurement of type {MeasurementType} for station {Station} is null.",
                             measurementType, record.Station);
                         continue;
                     }
@@ -85,14 +85,14 @@
                     }
 
                     // Create a DTO for valid measurement
-                    var dto = new CreateMeasurementDto
+                    var dto = new ImportedMeasurementDto
                     {
                         StationName = record.Station,
                         TypeName = measurementType,
                         Unit = measurementValue.Unit ?? "N/A",
                         Value = numericValue,
                         Status = measurementValue.Status ?? string.Empty,
-                        TimestampUtc = record.Timestamp // Use top-level timestamp;
+                        TimestampUtc = record.Timestamp // Use only top-level timestamp
                     };
 
                     _logger.LogDebug("Adding measurement: Station {Station}, Type {Type}, Value {Value}",

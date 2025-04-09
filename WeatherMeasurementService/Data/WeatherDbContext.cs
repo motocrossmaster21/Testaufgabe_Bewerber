@@ -1,5 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using WeatherMeasurementService.Models;
+using WeatherMeasurementService.Models.Daos;
 
 namespace WeatherMeasurementService.Data
 {
@@ -7,20 +7,29 @@ namespace WeatherMeasurementService.Data
     {
 
         // DbSets for the entities
-        public DbSet<Station> Stations { get; set; }
-        public DbSet<MeasurementType> MeasurementTypes { get; set; }
-        public DbSet<WeatherData> WeatherData { get; set; }
+        public DbSet<StationDao> Stations { get; set; }
+        public DbSet<MeasurementTypeDao> MeasurementTypes { get; set; }
+        public DbSet<WeatherDataDao> WeatherData { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            // Station 1:n WeatherData
-            modelBuilder.Entity<Station>()
+            modelBuilder.Entity<MeasurementTypeDao>()
+                .HasKey(m => m.MeasurementTypeId);
+
+            modelBuilder.Entity<StationDao>()
+                .HasKey(s => s.StationId);
+
+            modelBuilder.Entity<WeatherDataDao>()
+                .HasKey(w => w.WeatherDataId);
+
+            // StationDao 1:n WeatherData
+            modelBuilder.Entity<StationDao>()
                 .HasMany(s => s.Measurements)
                 .WithOne(m => m.Station)
                 .HasForeignKey(m => m.StationId);
 
-            // MeasurementType 1:n WeatherData
-            modelBuilder.Entity<MeasurementType>()
+            // MeasurementTypeDao 1:n WeatherData
+            modelBuilder.Entity<MeasurementTypeDao>()
                 .HasMany(mt => mt.Measurements)
                 .WithOne(m => m.MeasurementType)
                 .HasForeignKey(m => m.MeasurementTypeId);

@@ -1,6 +1,6 @@
 ﻿using System.Text.Json.Serialization;
 
-namespace WeatherMeasurementService.ExternalApiModels
+namespace WeatherMeasurementService.Models.ExternalApiModels
 {
     /// <summary>
     /// Represents the overall structure of the external API response.
