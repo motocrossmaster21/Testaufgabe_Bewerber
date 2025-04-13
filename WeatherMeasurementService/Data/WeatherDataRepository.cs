@@ -94,7 +94,7 @@ namespace WeatherMeasurementService.Data
 
         public async Task<IEnumerable<MeasurementTypeDto>> GetAllMeasurementTypesAsync()
         {
-            var types = await _context.MeasurementTypes.ToListAsync();
+            var types = await _context.MeasurementTypes.ToListAsync().ConfigureAwait(false);
             return types.Select(t => new MeasurementTypeDto
             {
                 TypeName = t.TypeName,
@@ -104,7 +104,7 @@ namespace WeatherMeasurementService.Data
 
         public async Task<IEnumerable<StationDto>> GetAllStationsAsync()
         {
-            var stations = await _context.Stations.ToListAsync();
+            var stations = await _context.Stations.ToListAsync().ConfigureAwait(false);
             return stations.Select(s => new StationDto
             {
                 Name = s.Name
@@ -114,13 +114,13 @@ namespace WeatherMeasurementService.Data
         public async Task<bool> ExistsMeasurementTypeAsync(string measurementType)
         {
             return await _context.MeasurementTypes
-                .AnyAsync(mt => mt.TypeName == measurementType);
+                .AnyAsync(mt => mt.TypeName == measurementType).ConfigureAwait(false);
         }
 
         public async Task<bool> ExistsStationAsync(string stationName)
         {
             return await _context.Stations
-                .AnyAsync(s => s.Name == stationName);
+                .AnyAsync(s => s.Name == stationName).ConfigureAwait(false);
         }
 
         public async Task<int> SaveChangesAsync()

@@ -27,8 +27,7 @@ namespace WeatherMeasurementService
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "WeatherMeasurementService", Version = "v1" });
                 c.EnableAnnotations();
                 c.UseInlineDefinitionsForEnums();
-                c.SchemaFilter<MeasurementTypeSchemaFilter>();// MeasurementType Dropdown
-                c.SchemaFilter<StationSchemaFilter>(); // Station Dropdown
+                c.SchemaFilter<QuerrySchemaFilter>();// Combined schema filter for customizing Swagger query schemas
             });
 
             // Register DbContext with SQLite
@@ -62,7 +61,7 @@ namespace WeatherMeasurementService
 
             using var scope = app.Services.CreateScope();
             var context = scope.ServiceProvider.GetRequiredService<WeatherDbContext>();
-            await context.Database.EnsureCreatedAsync();  // Creates the database and schema if not exists
+            await context.Database.EnsureCreatedAsync().ConfigureAwait(false);  // Creates the database and schema if not exists
 
             app.UseHttpsRedirection();
 
@@ -75,7 +74,7 @@ namespace WeatherMeasurementService
 
             app.MapControllers();
 
-            await app.RunAsync();
+            await app.RunAsync().ConfigureAwait(false);
 
         }
 

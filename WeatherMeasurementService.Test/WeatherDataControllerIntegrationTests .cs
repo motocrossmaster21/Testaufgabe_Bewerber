@@ -338,7 +338,7 @@ namespace WeatherMeasurementService.Tests
             await SeedMeasurementAsync(dto3);
 
             // Since station=zero is set, all measurements of the type should be supplied.
-            var url = $"/api/weatherdata/all?measurementType=air_temperature" +
+            var url = $"/api/weatherdata/?measurementType=air_temperature" +
                       $"&start={now.AddDays(-1):yyyy-MM-dd}&end={now:yyyy-MM-dd}";
 
             // Act
@@ -358,7 +358,7 @@ namespace WeatherMeasurementService.Tests
         {
             // Arrange: keine Daten in der DB
             var now = DateTime.UtcNow;
-            var url = $"/api/weatherdata/all?measurementType=air_temperature" +
+            var url = $"/api/weatherdata/?measurementType=air_temperature" +
                       $"&start={now.AddDays(-1):yyyy-MM-dd}&end={now:yyyy-MM-dd}";
             // Act
             var response = await _client.GetAsync(url);
@@ -461,7 +461,7 @@ namespace WeatherMeasurementService.Tests
             await SeedMeasurementAsync(dto3);
 
             // Query with station filter = tiefenbrunnen
-            var url = $"/api/weatherdata/all?measurementType=air_temperature" +
+            var url = $"/api/weatherdata/?measurementType=air_temperature" +
                       $"&start={now.AddDays(-1):yyyy-MM-dd}&end={now:yyyy-MM-dd}&station=tiefenbrunnen";
             // Act
             var response = await _client.GetAsync(url);
@@ -506,7 +506,7 @@ namespace WeatherMeasurementService.Tests
             await SeedMeasurementAsync(dtoStart);
             await SeedMeasurementAsync(dtoEnd);
 
-            var url = $"/api/weatherdata/all?measurementType=air_temperature" +
+            var url = $"/api/weatherdata/?measurementType=air_temperature" +
                       $"&start={startDate:yyyy-MM-dd}&end={now:yyyy-MM-dd}&station=tiefenbrunnen";
             // Act
             var response = await _client.GetAsync(url);
@@ -524,7 +524,7 @@ namespace WeatherMeasurementService.Tests
             // Arrange
             var now = DateTime.UtcNow;
             // Set start date after the end date
-            var url = $"/api/weatherdata/all?measurementType=air_temperature" +
+            var url = $"/api/weatherdata/?measurementType=air_temperature" +
                       $"&start={now.AddDays(1):yyyy-MM-dd}&end={now:yyyy-MM-dd}&station=tiefenbrunnen";
             // Act
             var response = await _client.GetAsync(url);
@@ -537,7 +537,7 @@ namespace WeatherMeasurementService.Tests
         {
             // Arrange: No measurement with the type "nonexistent" will be in the DB.
             var now = DateTime.UtcNow;
-            var url = $"/api/weatherdata/all?measurementType=nonexistent" +
+            var url = $"/api/weatherdata/?measurementType=nonexistent" +
                       $"&start={now.AddDays(-1):yyyy-MM-dd}&end={now:yyyy-MM-dd}&station=tiefenbrunnen";
             // Act
             var response = await _client.GetAsync(url);

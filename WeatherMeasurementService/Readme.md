@@ -29,16 +29,24 @@ Die Aufgabenstellung ist in der Datei `Testaufgabe_Bewerber.pdf` enthalten.
 ### 🔧 Debug-Modus (lokale Entwicklung)
 
 ```bash
-dotnet build .\WeatherMeasurementService -c Debug
+dotnet build WeatherMeasurementService -c Debug
 dotnet run --project WeatherMeasurementService
 ```
 
 ### 🚀 Release-Modus
 
 ```bash
-dotnet build .\WeatherMeasurementService -c Release
+dotnet build WeatherMeasurementService -c Release
 dotnet run --project WeatherMeasurementService -c Release
 ```
+
+## 🧪 Build und Testen
+
+```bash
+dotnet build .\WeatherMeasurementService -c Release
+dotnet test .\WeatherMeasurementService.Test\WeatherMeasurementService.Tests.csproj
+```
+
 ---
 
 ## 🔌 REST API (Swagger)

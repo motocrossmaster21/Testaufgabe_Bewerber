@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Swashbuckle.AspNetCore.Annotations;
 using WeatherMeasurementService.Services;
 
 namespace WeatherMeasurementService.Controllers
@@ -13,7 +14,13 @@ namespace WeatherMeasurementService.Controllers
         /// <summary>
         /// Returns a list of all available measurement types.
         /// </summary>
-        [HttpGet("measurement-types")]
+        [HttpGet]
+        [SwaggerOperation(
+            Summary = "Retrieve available measurement types",
+            Description = @"Retrieves a list of all available measurement types."
+        )]
+        [ProducesResponseType(typeof(IEnumerable<string>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
         public Task<IActionResult> GetMeasurementTypes() =>
             ExecuteSafeAsync(nameof(GetMeasurementTypes), async () =>
             {
