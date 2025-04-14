@@ -29,16 +29,24 @@ Die Aufgabenstellung ist in der Datei `Testaufgabe_Bewerber.pdf` enthalten.
 ### 🔧 Debug-Modus (lokale Entwicklung)
 
 ```bash
-dotnet build .\WeatherMeasurementService -c Debug
+dotnet build WeatherMeasurementService -c Debug
 dotnet run --project WeatherMeasurementService
 ```
 
 ### 🚀 Release-Modus
 
 ```bash
-dotnet build .\WeatherMeasurementService -c Release
+dotnet build WeatherMeasurementService -c Release
 dotnet run --project WeatherMeasurementService -c Release
 ```
+
+## 🧪 Build und Testen
+
+```bash
+dotnet build .\WeatherMeasurementService -c Release
+dotnet test .\WeatherMeasurementService.Test\WeatherMeasurementService.Tests.csproj
+```
+
 ---
 
 ## 🔌 REST API (Swagger)
@@ -76,6 +84,32 @@ Beispiel-URL:
 ```
 GET https://localhost:7017/api/weatherdata/average?start=2025-04-01&end=2025-04-10&station=tiefenbrunnen&measurementType=air_temperature
 ```
+
+---
+
+## 📡 Architekturübersicht
+
+Die Architektur besteht aus folgenden logischen Bereichen:
+
+- **Web Server**: ASP.NET Core Web API inkl. Swagger UI
+- **Background Services**: HostedService für automatischen Datenimport
+- **Database**: SQLite Datenbank mit EF Core ORM
+- **External API**: Wetterdaten über OpenData API Zürich
+
+### 📊 Deployment Diagramm
+Zeigt die Verteilung der Komponenten auf logische Knoten:
+
+![Deployment Diagram](./docs/uml/output/deployment_diagram.png)
+
+### 🛠️ Komponentenübersicht
+Das folgende Komponentendiagramm zeigt die logische Aufteilung der Anwendung nach Modulen:
+
+![Component Diagram](./docs/uml/output/component_diagram.png)
+
+### 📄 Klassendiagramm
+Für einen tieferen Einblick in Struktur und Beziehungen zwischen Klassen:
+
+➡️ [Klassendiagramm anzeigen](./docs/uml/output/class_diagram.png)
 
 ---
 
@@ -120,7 +154,7 @@ Der Fokus der Tests liegt auf der Absicherung der zentralen Logik, Validierungen
 
 ---
 
-## 🛠 Datenbank
+## 💠 Datenbank
 
 Das Projekt verwendet eine relationale **SQLite**-Datenbank zur persistenten Speicherung von Wettermessdaten.
 
