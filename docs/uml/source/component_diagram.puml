@@ -1,0 +1,81 @@
+@startuml
+left to right direction
+title WeatherMeasurementService – Building Component Diagram
+
+actor "REST Client" as Client
+actor "OpenData API (Zurich)" as ExternalApi
+database "SQLite DB" as DB
+
+rectangle "Controllers" as Controllers {
+  component "BaseApiController"
+  component "StationsController"
+  component "MeasurementTypeController"
+  component "WeatherDataController"
+}
+
+rectangle "Services" as Services {
+  interface "IWeatherDataService" as IWDService
+  component "WeatherDataService" as WDService
+  
+  component "ExternalWeatherApiClient"
+  component "WeatherDataFetcherHostedService"
+  component "WeatherDataProcessingService"
+}
+
+rectangle "Data" as DataLayer {
+  interface "IWeatherDataRepository" as IWDataRepo
+  component "WeatherDataRepository" as WDRepository
+  component "WeatherDbContext"
+}
+
+rectangle "Models" as Models {
+  folder "Daos" {
+    component "MeasurementTypeDao"
+    component "StationDao"
+    component "WeatherDataDao"
+  }
+  folder "Dtos" {
+    component "ImportedMeasurementDto"
+    component "MeasurementTypeDto"
+    component "ResponseWeatherDataDto"
+    component "StationDto"
+    component "WeatherDataDto"
+    component "WeatherDataQueryDto"
+  }
+  folder "ExternalApiModels" {
+    component "WeatherApiResponse"
+    component "WeatherApiResult"
+    component "WeatherApiValue"
+  }
+}
+
+rectangle "Swagger" as Swagger {
+  component "QuerrySchemaFilter"
+}
+
+rectangle "Config" as Config {
+  component "appsettings.json"
+  component "launchSettings.json"
+}
+
+component "Program.cs" as Program
+
+'--- Interface Realizations ---
+IWDService <|.. WDService
+IWDataRepo <|.. WDRepository
+
+'--- Main Connections ---
+Client --> Controllers: REST/HTTP requests
+Controllers --> IWDService: Business logic calls
+WDService --> IWDataRepo: Data access
+WDRepository --> DB: CRUD (EF Core)
+
+WeatherDataFetcherHostedService --> ExternalWeatherApiClient: Fetch weather data
+ExternalWeatherApiClient --> ExternalApi: HTTP GET
+ExternalApi --> ExternalWeatherApiClient: JSON response
+ExternalWeatherApiClient --> WeatherDataProcessingService: Forward data
+WeatherDataProcessingService --> IWDataRepo: Insert/Update
+
+Config -[dotted]-> Program: Loads configuration
+Swagger -[dotted]-> Program: Swagger setup
+@enduml

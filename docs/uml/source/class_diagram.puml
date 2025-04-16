@@ -1,0 +1,211 @@
+@startuml
+left to right direction
+
+title WeatherMeasurementService – Class Diagram
+
+'
+' Interfaces
+'
+interface IWeatherDataService
+interface IWeatherDataRepository
+
+'
+' Services
+'
+package "Services" {
+  class WeatherDataService {
+    - repository : IWeatherDataRepository
+    + GetHighestAsync()
+    + GetLowestAsync()
+    + GetAverageAsync()
+    + GetCountAsync()
+    + GetAllAsync()
+  }
+
+  WeatherDataService --|> IWeatherDataService
+
+  class ExternalWeatherApiClient {
+    - httpClient : HttpClient
+    + FetchWeatherDataAsync()
+  }
+
+  class WeatherDataFetcherHostedService {
+    - externalService : ExternalWeatherApiClient
+    - processingService : WeatherDataProcessingService
+    + StartAsync()
+    + StopAsync()
+  }
+
+  class WeatherDataProcessingService {
+    - repository : IWeatherDataRepository
+    + ProcessWeatherDataAsync()
+  }
+
+  class MeasurementTypeNotFoundException
+  class StationNotFoundException
+}
+
+'
+' Data
+'
+package "Data" {
+  class WeatherDataRepository {
+    - context : WeatherDbContext
+    + AddMeasurementAsync()
+    + GetAllMeasurementsAsync()
+    + GetAllMeasurementTypesAsync()
+    + GetAllStationsAsync()
+    + ExistsMeasurementTypeAsync()
+    + ExistsStationAsync()
+    + SaveChangesAsync()
+  }
+  WeatherDataRepository --|> IWeatherDataRepository
+
+  class WeatherDbContext {
+    + Stations
+    + MeasurementTypes
+    + WeatherData
+    + OnModelCreating()
+  }
+}
+
+'
+' Controllers
+'
+package "Controllers" {
+  abstract class BaseApiController {
+    - _logger : ILogger
+    + ExecuteSafeAsync()
+  }
+
+  class StationsController {
+    - service : IWeatherDataService
+    + GetStations()
+  }
+  StationsController --|> BaseApiController
+  StationsController --> IWeatherDataService
+
+  class MeasurementTypeController {
+    - service : IWeatherDataService
+    + GetMeasurementTypes()
+  }
+  MeasurementTypeController --|> BaseApiController
+  MeasurementTypeController --> IWeatherDataService
+
+  class WeatherDataController {
+    - service : IWeatherDataService
+    + GetHighestAsync()
+    + GetLowestAsync()
+    + GetAverageAsync()
+    + GetCountAsync()
+    + GetAllAsync()
+  }
+  WeatherDataController --|> BaseApiController
+  WeatherDataController --> IWeatherDataService
+}
+
+'
+' Models
+'
+package "Models.Daos" {
+  class MeasurementTypeDao {
+    + MeasurementTypeId : int
+    + TypeName : string
+    + DefaultUnit : string
+  }
+
+  class StationDao {
+    + StationId : int
+    + Name : string
+  }
+
+  class WeatherDataDao {
+    + WeatherDataId : int
+    + TimestampUtc : DateTime
+    + Value : double
+    + Unit : string
+  }
+}
+
+package "Models.Dtos" {
+  class ImportedMeasurementDto {
+    + StationName : string
+    + TypeName : string
+    + Value : double
+    + Unit : string
+    + Status : string
+    + TimestampUtc : DateTime
+  }
+
+  class MeasurementTypeDto {
+    + TypeName : string
+    + DefaultUnit : string
+  }
+
+  class ResponseWeatherDataDto {
+    + Result
+    + Dataset : ICollection<WeatherDataDto>
+  }
+
+  class StationDto {
+    + Name : string
+  }
+
+  class WeatherDataDto {
+    + StationName : string
+    + MeasurementType : string
+    + Value : double
+    + Unit : string
+    + TimestampUtc : DateTime
+  }
+
+  class WeatherDataQueryDto {
+    + MeasurementType : string
+    + Station : string
+    + Start : DateTime
+    + End : DateTime
+  }
+}
+
+package "Models.ExternalApiModels" {
+  class WeatherApiResponse {
+    + Ok : bool
+    + Message : string
+    + TotalCount : int
+    + RowCount : int
+    + Result : List<WeatherApiResult>
+  }
+
+  class WeatherApiResult {
+    + Station : string
+    + Timestamp : DateTime
+    + Values : Dictionary<string, WeatherApiValue>
+  }
+
+  class WeatherApiValue {
+    + Value : JsonElement
+    + Unit : string
+    + Status : string
+  }
+}
+
+'
+' Program & Swagger
+'
+package "Swagger" {
+  class QuerrySchemaFilter {
+    + Apply()
+  }
+}
+
+class "Program.cs" as Program
+
+'
+' Relationships
+'
+WeatherDataService --> IWeatherDataRepository : uses
+WeatherDataRepository --> WeatherDbContext : DB Access
+WeatherDataFetcherHostedService --> ExternalWeatherApiClient : fetch data
+WeatherDataFetcherHostedService --> WeatherDataProcessingService : process data
+WeatherDataProcessingService --> IWeatherDataRepository : store data
+@enduml

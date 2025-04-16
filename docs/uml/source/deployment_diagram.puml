@@ -1,0 +1,44 @@
+@startuml
+title Deployment View – WeatherMeasurementService
+
+node "Web Server (ASP.NET Core)" {
+  component "API Controllers" {
+    [StationsController]
+    [MeasurementTypeController]
+    [WeatherDataController]
+  }
+  component "WeatherDataService"
+  component "Swagger UI"
+}
+
+node "Background Services" {
+  component "WeatherDataFetcherHostedService"
+  component "ExternalWeatherApiClient"
+  component "WeatherDataProcessingService"
+}
+
+node "Database Server" {
+  database "SQL Database" {
+    [WeatherDbContext]
+    [WeatherDataRepository]
+  }
+}
+
+node "External Weather API" {
+  [External Weather Service]
+}
+
+' Relationships
+[StationsController] --> [WeatherDataService]
+[MeasurementTypeController] --> [WeatherDataService]
+[WeatherDataController] --> [WeatherDataService]
+
+[WeatherDataFetcherHostedService] --> [ExternalWeatherApiClient]
+[WeatherDataFetcherHostedService] --> [WeatherDataProcessingService]
+[WeatherDataProcessingService] --> [WeatherDataRepository]
+
+[WeatherDataService] --> [WeatherDataRepository]
+[WeatherDataRepository] --> [WeatherDbContext]
+
+[ExternalWeatherApiClient] --> [External Weather Service]
+@enduml
