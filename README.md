@@ -20,7 +20,7 @@ Ziel war es, einen .NET REST-Service zu entwerfen, welcher Wetterdaten verarbeit
 - Unit-Tests
 - Optional: Docker-Unterstützung
 
-Die Aufgabenstellung ist in der Datei `Testaufgabe_Bewerber.pdf` enthalten.
+Die Aufgabenstellung ist in der Datei `.\docs\Testaufgabe_Bewerber.pdf` enthalten.
 
 ---
 
@@ -48,6 +48,76 @@ dotnet test .\WeatherMeasurementService.Test\WeatherMeasurementService.Tests.csp
 ```
 
 ---
+
+## 🐳 Docker Support
+
+Die Anwendung kann als Container betrieben werden – lokal oder über Docker Hub.  
+Das Dockerfile nutzt ein **Multi-Stage-Build**, um ein schlankes Runtime-Image bereitzustellen.
+
+---
+
+### 🔧 Lokales Docker Build & Start
+
+```bash
+# Image lokal builden
+docker build -t weather-measurement-service .
+
+# Container lokal starten
+docker run -d -p 8080:80 --name weather-api-dev weather-measurement-service
+```
+
+➡️ Swagger UI erreichbar unter: 
+📍 **http://localhost:8080/swagger**
+
+---
+
+### ☁️ Deployment auf Docker Hub
+
+```bash
+# Image taggen für Docker Hub
+docker tag weather-measurement-service joel85/weather-measurement-service:latest
+
+# Docker Hub Login
+docker login
+
+# Push zum eigenen Repository
+docker push joel85/weather-measurement-service:latest
+```
+
+```bash
+# Container vom Docker Hub starten
+docker run -d -p 8080:80 --name weather-api joel85/weather-measurement-service:latest
+```
+
+---
+
+### 🛑 Container stoppen & entfernen
+
+```bash
+# Container stoppen
+docker stop weather-api-dev    # für lokalen Build
+docker stop weather-api        # für Docker Hub Pull
+
+# Container entfernen
+docker rm weather-api-dev
+docker rm weather-api
+```
+
+---
+
+## 📝 Vorschlag für Docker Hub README (Repository-Beschreibung)
+
+> **WeatherMeasurementService** is a .NET 9 microservice that fetches, stores, and analyzes weather data from Zürich's police water stations.  
+It exposes a REST API with Swagger UI and uses SQLite for local data persistence.
+
+### 🔧 Usage
+
+```bash
+docker run -d -p 8080:80 joel85/weather-measurement-service:latest
+```
+
+Then open [http://localhost:8080/swagger](http://localhost:8080/swagger) in your browser.
+
 
 ## 🔌 REST API (Swagger)
 
@@ -109,7 +179,7 @@ Das folgende Komponentendiagramm zeigt die logische Aufteilung der Anwendung nac
 ### 📄 Klassendiagramm
 Für einen tieferen Einblick in Struktur und Beziehungen zwischen Klassen:
 
-➡️ [Klassendiagramm anzeigen](./docs/uml/output/class_diagram.png)
+![Klassendiagramm anzeigen](./docs/uml/output/class_diagram.png)
 
 ---
 
